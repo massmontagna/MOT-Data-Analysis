@@ -1,6 +1,12 @@
 # MacOS
 .DS_Store
 
+# Project files
+data/raw/
+data/processed/
+.mot/
+data/mot.duckdb
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
