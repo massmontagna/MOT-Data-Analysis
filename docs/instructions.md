@@ -27,10 +27,10 @@ This is my own record of how I'm building this project: what I do, in what order
 | 1 | Set up the project (repo, folders, environment) | Done |
 | 2 | Get the data and write the data dictionary | Done, and kept up to date |
 | 3a | Load and clean the results files | Done |
-| 3b | Load and clean the item files | Items loaded. Clean item table is next |
-| 4 | Lookup tables (turn defect codes into readable categories) | Planned |
-| 5 | Analysis in SQL | Planned |
-| 6 | Charts | Planned |
+| 3b | Load and clean the item files | Done (`test_item_clean`) |
+| 4 | Lookup tables (turn defect codes into readable categories) | Done (`03_looksups.ipynb`, `test_item_labelled`) |
+| 5 | Analysis in SQL | Done (`04_analysis.ipynb`) |
+| 6 | Charts | Done (6 charts in `reports/figures/`) |
 | 7 | Modelling | Planned |
 | 8 | Scripts, README, portfolio page | Planned |
 
@@ -815,7 +815,7 @@ I'll put the finished queries in `sql/04_analysis.sql`.
    - **Multi-step comparisons** using CTEs
 3. Use the guide's definitions to compute failure rates (section 8 of the data dictionary), and check that the overall rate looks sensible against DVSA's published figures.
 4. Keep an eye on the caveats: hybrid fuel types, excluded tests, and anything related to the unknown cause of the duplicates.
-5. Write the results and my interpretation in the notebook `notebooks/02_analysis.ipynb`.
+5. Write the results and my interpretation in the notebook `notebooks/04_analysis.ipynb`.
 
 ## 8. Step 6: charts (planned)
 
@@ -866,6 +866,11 @@ I'll put the finished queries in `sql/04_analysis.sql`.
 | Tests with at least one item | 25,983,976 |
 | Items by type: A / F / M / P | 60,423,134 / 21,455,761 / 6,996,403 / 2,954,656 |
 | Items with `dangerous_mark = 'D'` | 3,885,070 |
+| Rows in `test_item_clean` and `test_item_labelled` | 91,487,420 |
+| Labelled items with no lookup description | 2,699 (15 `rfr_id`s) |
+| Lookup rows: item detail / item group | 21,105 / 4,144 |
+| Tests in `analysis_scope` (Class 4, NT, P/F/PRS) | 32,968,239 |
+| Initial / final failure rate in scope | 28.3% / 22.8% |
 | January initial fail rate: single-row tests vs conflicting tests | 30.0% vs 29.4% |
 
 ## 12. Problems and fixes (things that went wrong, or that I need to watch for)

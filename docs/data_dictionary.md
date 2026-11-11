@@ -26,7 +26,7 @@ The user guide (v5.1) describes data up to the end of 2023, so some of what it s
 |---|---|---|---|
 | Results (one row per test) | `MOT testing data results (2024)` | `test_result_202401.csv` to `test_result_202412.csv` | 66,857,355 data rows in the files. 42,767,586 after removing exact copies. 42,430,899 after excluding conflicting tests |
 | Failure items (one row per defect or advisory) | `MOT Testing data failure item (2024)` | `test_item_202401.csv` to `test_item_202412.csv` | 91,829,954 after removing exact copies (I didn't count the raw rows) |
-| Lookup tables | `lookup` | Not inspected yet | n/a |
+| Lookup tables | `lookup` | 6 files, `dft_*_extract.csv` (section 6) | 21,105 item details, 4,144 item groups, plus 4 small code lists |
 
 **Format (differs from the guide):**
 - **Comma-separated**, not pipe-separated as the guide says.
@@ -42,7 +42,7 @@ The user guide (v5.1) describes data up to the end of 2023, so some of what it s
 
 - One test (results) has zero or more items (failure items). They join on `test_id`.
 - `test_id` is meant to be the primary key of the results table, but it isn't unique in the 2024 files (see section 7.2).
-- In the guide, an item links to a description through `RfR ID` plus `Test Class ID`, and the descriptions sit in a hierarchy of item groups (this is how I'll get readable categories such as brakes or suspension). I haven't inspected the lookup files yet.
+- In the guide, an item links to a description through `RfR ID` plus `Test Class ID`, and the descriptions sit in a hierarchy of item groups. Items don't carry the test class, so it comes from the results table. Each item detail has a `test_item_set_section_id` that points straight at its top-level group (brakes, suspension and so on), so I don't need to walk the hierarchy (section 6).
 
 ### Tables I build in DuckDB
 
@@ -52,7 +52,11 @@ The user guide (v5.1) describes data up to the end of 2023, so some of what it s
 | `test_conflicts` | Tests that still have more than one row after the step above (excluded from analysis) | 167,725 tests (336,687 rows) |
 | `test_result_clean` | Analysis table for results: typed, one row per test, conflicting tests excluded, cleaning rules applied (section 7.5) | 42,430,899 |
 | `items_dedup` | All 12 months of items as text, header rows removed, exact copies removed | 91,829,954 |
-| `test_item_clean` | Items typed and limited to tests in `test_result_clean` | Not built yet |
+| `test_item_clean` | Items typed and limited to tests in `test_result_clean` | 91,487,420 |
+| `lookup_*` | The six lookup files loaded as text (section 6) | see section 6 |
+| `test_item_labelled` | `test_item_clean` plus test class, defect category and top-level section name | 91,487,420 (2,699 without a description) |
+| `analysis_scope` (view) | Class 4 initial tests with result P, F or PRS, plus `age` (vehicle age with impossible first-use years removed, section 7.8) | 32,968,239 |
+| `scope_test_category` | One row per test in scope × top-level category with at least one F or P item | built in `04_analysis.ipynb` |
 
 Columns in `test_result_clean`: `test_id`, `vehicle_id`, `test_date`, `test_class_id`, `test_type`, `test_result`, `is_initial_fail`, `test_mileage`, `postcode_area`, `make`, `model`, `is_unclassified`, `fuel_type`, `fuel_type_desc`, `cylinder_capacity`, `first_use_year`, `vehicle_age_years`.
 
@@ -154,7 +158,11 @@ One row per defect, advisory or minor defect recorded against a test.
 | NULL | 87,944,884 |
 | D | 3,885,070 |
 
-The guide says this marker was only populated up to May 2018 and isn't comparable with the post-2018 Dangerous category. But 4.2% of 2024 items carry a `D`. I don't yet know what it means now. To work out, I'll check which item types it appears on and compare it with the defect category in the lookup tables.
+The guide says this marker was only populated up to May 2018 and isn't comparable with the post-2018 Dangerous category. But 4.2% of 2024 items carry a `D`.
+
+**What it means in 2024 (settled with the lookups, `03_looksups.ipynb`):** `D` is the dangerous-defect flag. On fail (F) and PRS (P) items it matches the lookup category exactly: every F or P item whose category is Dangerous carries `D` (3,714,394 F + 146,419 P), and no Major item does. The other two groups are oddities: 10,387 advisories with a Pre-EU Directive category carry `D`, and so do 305 F items with no lookup match. For analysis I use `rfr_deficiency_category` and ignore `dangerous_mark`.
+
+Note that advisories carry the lookup category of their defect (for example 26,182,206 advisories are listed as "Dangerous"). That's the category the defect *would* have if it failed, not a severity the tester gave, so I never count advisories by category.
 
 ### Defect categories (post-May 2018)
 
@@ -167,12 +175,24 @@ The guide says this marker was only populated up to May 2018 and isn't comparabl
 
 ## 6. Lookup tables
 
-I haven't opened the lookup files yet. From the guide, I expect:
-- **Item detail:** a description for each defect (`rfr_id` plus test class), including its category (dangerous, major, minor) and a link to its group. The defect category column is only available from 2022 onward.
-- **Item group:** the hierarchy of groups, which I'll use to turn defects into readable top-level categories such as brakes or suspension.
-- **Failure location:** lateral, longitudinal and vertical position on the vehicle.
+All six are comma-separated with a header row. I load them as text into `lookup_<name>`.
 
-I'll fill in the exact file names and columns when I load them.
+| File | Table | Rows | Key (checked unique) | Columns |
+|---|---|---|---|---|
+| `dft_item_detail_extract.csv` | `lookup_item_detail` | 21,105 | `rfr_id` + `test_class_id` | `test_item_id`, `minor_item`, `rfr_deficiency_category`, `rfr_desc`, `rfr_loc_marker`, `rfr_insp_manual_desc`, `rfr_advisory_text`, `test_item_set_section_id` |
+| `dft_item_group_extract.csv` | `lookup_item_group` | 4,144 | `test_item_id` + `test_class_id` | `parent_id`, `test_item_set_section_id`, `item_name` |
+| `dft_mdr_fuel_type_extract.csv` | `lookup_fuel_type` | 14 | `type_code` | `fuel_type` |
+| `dft_mdr_rfr_location_extract.csv` | `lookup_location` | 129 | `id` | `lateral`, `longitudinal`, `vertical` |
+| `dft_mdr_test_outcome_extract.csv` | `lookup_test_outcome` | 7 | `result_code` | `result` |
+| `dft_mdr_test_type_extract.csv` | `lookup_test_type` | 6 | `type_code` | `test_type` |
+
+**Defect categories in item detail:** Pre-EU Directive 12,595, Major 5,266, Dangerous 2,370, Minor 874. "Pre-EU Directive" covers the old (pre-May 2018) defect codes.
+
+**Join path:** item → `test_result_clean` (for `test_class_id`) → item detail on `rfr_id` + `test_class_id` → item group on `test_item_set_section_id = test_item_id` + `test_class_id`. All 21,105 item details match a group this way, and the group's `item_name` is the top-level category (Brakes, Suspension, Tyres and so on).
+
+**Coverage:** 2,699 of 91,487,420 items (15 distinct `rfr_id`s, across classes 2, 3, 4, 5 and 7) have no item detail, so they have no category. That's 0.003%, so I leave them out of category counts.
+
+**Top-level categories for Class 4 fail and PRS items:** Lamps, reflectors and electrical equipment; Suspension; Brakes; Tyres; Visibility; Body, chassis, structure; Noise, emissions and leaks; Steering; Seat belts and supplementary restraint systems; Road Wheels; Identification of the vehicle; plus a few tiny ones.
 
 ## 7. Known quirks and cleaning decisions
 
@@ -281,6 +301,12 @@ Without normalising, hybrids and electric cars would each be split into two grou
 - **Rule:** mileage under 100 (7,421 tests), exactly 248,601 (687) or exactly 999,999 (137) is set to missing. Total missing mileage went from 321,853 to 330,098.
 - **Median mileage** of valid readings is 68,681. 5,393 are over 500,000.
 - **Limitation:** I found these values from the top of the frequency list, so smaller spikes may remain.
+
+### 7.8 Impossible first-use years
+
+- `vehicle_age_years` in `test_result_clean` goes up to **1930**, because about 30 tests have first-use years such as 94, 211, 998 or 1012 (presumably typing errors).
+- Ages over 60 (7,345 tests) are mostly real classic cars, from first-use years 1949 to 1963, so I keep them.
+- **Rule:** in the `analysis_scope` view, `age` is missing when `first_use_year < 1900`. I left `test_result_clean` unchanged.
 
 ## 8. Metric definitions (from the guide)
 
