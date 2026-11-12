@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What makes a car fail its MOT? An analysis of 33 million UK tests</title>
+<meta name="description" content="An analysis of every MOT test carried out in Great Britain in 2024 (42 million tests and 92 million defect and advisory records from the DVSA), built with SQL in DuckDB and Python. I&#x27;m a mechanical engineer, so the questions are engineering ones: which systems wear out as cars age, and how failures differ between petrol, diesel, hybrid and electric cars.">
+<link rel="canonical" href="https://motanalysis.massmontagna.com/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://motanalysis.massmontagna.com/">
+<meta property="og:title" content="What makes a car fail its MOT? An analysis of 33 million UK tests">
+<meta property="og:description" content="An analysis of every MOT test carried out in Great Britain in 2024 (42 million tests and 92 million defect and advisory records from the DVSA), built with SQL in DuckDB and Python. I&#x27;m a mechanical engineer, so the questions are engineering ones: which systems wear out as cars age, and how failures differ between petrol, diesel, hybrid and electric cars.">
+<meta property="og:image" content="https://motanalysis.massmontagna.com/figures/01_fail_rate_by_age.png">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  /* Tokens from massmontagna.github.io/DESIGN.md */
+  :root {
+    --accent: #1d4ed8; --accent-deep: #1e3a8a; --on-accent: #fff;
+    --paper: #fff; --paper-subtle: #f6f7f9; --hairline: #e3e6ea;
+    --ink: #14171c; --graphite: #555d68; --selection: #dbe4fb;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --accent: #8fb0ff; --accent-deep: #b9ceff; --on-accent: #0b1020;
+      --paper: #121418; --paper-subtle: #1a1d23; --hairline: #2b3038;
+      --ink: #e8eaee; --graphite: #a2a9b4; --selection: #24345e;
+    }
+    /* The charts have white backgrounds, so frame them instead of inverting. */
+    main img { background: #fff; }
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  ::selection { background: var(--selection); }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 400 1.0625rem/1.65 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 44rem; margin: 0 auto; padding: 0 16px; }
+  a { color: var(--accent); text-underline-offset: 0.15em; }
+  a:hover { color: var(--accent-deep); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  header { padding: 56px 0 32px; border-bottom: 1px solid var(--hairline); }
+  .back { font-size: 0.9375rem; color: var(--graphite); text-decoration: none; }
+  .back:hover { text-decoration: underline; }
+  h1 { font-size: clamp(2rem, 5vw, 3.25rem); font-weight: 650; line-height: 1.08; letter-spacing: -0.03em; margin: 16px 0 24px; text-wrap: balance; }
+  .button {
+    display: inline-block; padding: 10px 18px; border-radius: 6px;
+    background: var(--accent); color: var(--on-accent); font-weight: 600; text-decoration: none;
+  }
+  .button:hover { background: var(--accent-deep); color: var(--on-accent); }
+
+  main { padding: 32px 0 48px; }
+  h2 { font-size: 1.5rem; font-weight: 650; line-height: 1.2; letter-spacing: -0.015em; margin: 48px 0 16px; }
+  main > p:first-child { font-size: clamp(1.125rem, 1.8vw, 1.3rem); font-weight: 500; }
+  img { display: block; width: 100%; height: auto; margin: 24px 0; border: 1px solid var(--hairline); border-radius: 6px; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.875em; background: var(--paper-subtle); padding: 0.1em 0.3em; border-radius: 4px; }
+  pre { background: var(--paper-subtle); border: 1px solid var(--hairline); border-radius: 6px; padding: 16px; overflow-x: auto; line-height: 1.7; }
+  pre code { background: none; padding: 0; }
+  .table { overflow-x: auto; margin: 24px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9375rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+  th { font-weight: 650; }
+  td:not(:first-child), th:not(:first-child) { font-variant-numeric: tabular-nums; }
+  li { margin: 6px 0; }
+
+  footer { border-top: 1px solid var(--hairline); padding: 24px 0 48px; color: var(--graphite); font-size: 0.9375rem; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="back" href="https://massmontagna.com">← massmontagna.com</a>
+    <h1>What makes a car fail its MOT? An analysis of 33 million UK tests</h1>
+    <a class="button" href="https://github.com/massmontagna/MOT-Data-Analysis">View the code on GitHub</a>
+  </div>
+</header>
+<main class="wrap">
+<p>An analysis of every MOT test carried out in Great Britain in 2024 (42 million tests and 92 million defect and advisory records from the DVSA), built with SQL in DuckDB and Python. I'm a mechanical engineer, so the questions are engineering ones: which systems wear out as cars age, and how failures differ between petrol, diesel, hybrid and electric cars.</p>
+<p><strong>Scope of the numbers below:</strong> cars and light vans (Class 4), initial tests only, results pass, fail or PRS (fixed within an hour). That's <strong>32,968,239 tests</strong>.</p>
+<h2>Key findings</h2>
+<p><strong>1. 28.3% of cars fail their MOT first time.</strong> 22.8% still fail after on-the-spot repairs. Both figures are in line with DVSA's published statistics, which confirms the cleaning hasn't distorted the data.</p>
+<p><strong>2. The failure rate rises with age and peaks at 18 years, then falls.</strong> It goes from 12.4% at 3 years to 43.9% at 18, then drops to 32.5% at 30. The likely reason is survivorship: a car still on the road at 25 is usually one somebody looks after.</p>
+<p><img src="figures/01_fail_rate_by_age.png" alt="Failure rate by vehicle age" /></p>
+<p><strong>3. Mileage has the same shape.</strong> The failure rate more than triples from under 30k miles (11.6%) to 90–120k (39.0%), then levels off at about 42%.</p>
+<p><img src="figures/02_fail_rate_by_mileage.png" alt="Failure rate by mileage" /></p>
+<p><strong>4. Different systems fail at different ages.</strong> On a 3-year-old car, tyres are the top cause of failure. They're a wear item that depends on the driver, not the car's age, so they stay flat at 5–8% throughout. The systems that do deteriorate with age overtake tyres by about 8 years: suspension rises 27-fold (0.6% to 17.3% of tests, as springs corrode and bushes and joints wear), lighting and electrical from 2.9% to 21.8%, and brakes from 1.7% to 13.9%.</p>
+<p><img src="figures/04_defect_category_by_age.png" alt="Defect categories by age" /></p>
+<p><strong>5. Hybrids fail least at every age, and diesels fail most.</strong> Comparing within the same age band, so newer hybrid and electric fleets aren't flattered: at 3–5 years, 11.0% of hybrids fail, against 12.6% of petrol cars and 17.2% of diesels.</p>
+<p><img src="figures/03_fail_rate_by_fuel_and_age.png" alt="Failure rate by fuel type and age" /></p>
+<p><strong>6. Electric cars fail differently.</strong> At 3–9 years, tyres are the only main category where electric cars fail more often than any other fuel type: 8.0% of tests, against 5.5% for petrol. That fits the engineering, since EVs are heavier and deliver instant torque. They almost never fail on emissions and leaks (0.01%), and they fail least on brakes (1.2%), probably because regenerative braking does much of the work.</p>
+<p><img src="figures/05_defect_category_by_fuel.png" alt="Defect categories by fuel type" /></p>
+<p><strong>7. Make matters, even at the same age.</strong> Among cars aged 8–12 years, Renault (39.5%) and Citroën (39.1%) fail about twice as often as Honda (19.3%). Lighting or suspension is the top failure category for almost every make. Audi (tyres) and Kia (brakes) are the exceptions.</p>
+<p><img src="figures/06_fail_rate_by_make.png" alt="Failure rate by make" /></p>
+<h2>Can a model predict a fail?</h2>
+<p>I trained models to predict an initial fail from the five facts the data holds about each car: age, mileage, make, fuel type and engine size. I used a 5% sample of vehicles (1.6 million tests), split by vehicle so no car appears in both the training and test sets.</p>
+<div class="table"><table>
+<thead>
+<tr>
+  <th>Model</th>
+  <th>ROC AUC</th>
+  <th>Brier score</th>
+  <th>Better than guessing the average</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Baseline (predict 28% for every car)</td>
+  <td>0.500</td>
+  <td>0.203</td>
+  <td>n/a</td>
+</tr>
+<tr>
+  <td>Logistic regression (splines for age and mileage)</td>
+  <td>0.687</td>
+  <td>0.185</td>
+  <td>8.6%</td>
+</tr>
+<tr>
+  <td>Gradient-boosted trees</td>
+  <td><strong>0.692</strong></td>
+  <td><strong>0.184</strong></td>
+  <td><strong>9.0%</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>8. Basic facts about a car explain only part of an MOT result.</strong> The best model ranks a failing car above a passing one 69% of the time. Its probabilities are very well calibrated: in every risk decile the prediction is within 0.6 points of reality, and the riskiest tenth of cars fails six times as often as the safest (51.6% against 8.7%). But it never predicts much more than a 50% chance, because most of what decides a fail (maintenance, driving conditions, the tester) isn't in the data. A simple logistic regression does almost as well as the trees, so the effects are mostly smooth and independent.</p>
+<p><img src="figures/07_model_calibration.png" alt="Model calibration" /></p>
+<p><strong>9. Mileage and age carry the predictions, and fuel type adds almost nothing once those are known.</strong> That suggests much of the diesel gap in finding 5 is a mileage effect, because diesels are typically bought for high-mileage driving.</p>
+<p><img src="figures/08_feature_importance.png" alt="Feature importance" /></p>
+<p>The natural next step is the car's own history. Adding 2023 data would let a model use last year's result and advisories for the same <code>vehicle_id</code>.</p>
+<h2>Caveats</h2>
+<ul>
+<li><strong>Make comparisons only control for age.</strong> Mileage, owner type and maintenance differ between makes and aren't adjusted for.</li>
+<li><strong>167,725 tests (0.4%) were excluded</strong> because their records in the source files contradicted each other. A bias check on January found a fail rate of 29.4% for those tests, against 30.0% for the rest, so excluding them barely moves the overall rate.</li>
+<li><strong>The electric fleet is young.</strong> Only 18,422 electric cars aged 10–14 were tested, and within the 3–9 band most EVs are 3–5 years old.</li>
+<li><strong>Some mileages and first-use years were set to missing</strong> because they were placeholders or typing errors: 330,098 mileages, and about 30 first-use years such as 94 or 1012. The rules are in <a href="https://github.com/massmontagna/MOT-Data-Analysis/blob/main/docs/data_dictionary.md">the data dictionary</a>, section 7.</li>
+<li><strong>These are associations, not causes.</strong> The explanations above (survivorship, battery weight, regenerative braking, diesel mileage) are hypotheses the data is consistent with, not ones it proves.</li>
+</ul>
+<h2>Method</h2>
+<ol>
+<li><strong>Load.</strong> 24 monthly CSV files (about 12 GB), all read as text into DuckDB. The files differ from the official user guide in several ways: they use commas rather than pipes, use backslash escapes, repeat the header row inside the files, and populate the &quot;dangerous&quot; marker the guide says is empty.</li>
+<li><strong>Clean.</strong> Exact duplicate rows are removed. Tests whose rows still disagree are recorded in their own table and excluded. Types are converted deliberately, and each cleaning rule is documented with the number of rows it affects.</li>
+<li><strong>Label.</strong> Each defect is joined through the DVSA lookup tables to its severity (dangerous, major or minor) and its top-level system (brakes, suspension and so on). 99.997% of items match.</li>
+<li><strong>Analyse.</strong> SQL with CTEs and window functions, using DVSA's own metric definitions. Comparisons hold age fixed wherever fleet age would otherwise distort them.</li>
+<li><strong>Model.</strong> A baseline, then logistic regression, then gradient-boosted trees, evaluated on held-out vehicles for ranking (AUC), probability quality (log loss, Brier) and calibration.</li>
+<li><strong>Check.</strong> Every table is reconciled against a count I already trust. The expected numbers are listed in <a href="https://github.com/massmontagna/MOT-Data-Analysis/blob/main/docs/instructions.md">docs/instructions.md</a>, section 11, and <code>src/load_db.py</code> prints them after every build.</li>
+</ol>
+<div class="table"><table>
+<thead>
+<tr>
+  <th>Notebook</th>
+  <th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><a href="https://github.com/massmontagna/MOT-Data-Analysis/blob/main/notebooks/01_exploration.ipynb">01_exploration</a></td>
+  <td>First look at the raw files</td>
+</tr>
+<tr>
+  <td><a href="https://github.com/massmontagna/MOT-Data-Analysis/blob/main/notebooks/02_load_and_clean.ipynb">02_load_and_clean</a></td>
+  <td>Works out and builds the clean results and item tables, step by step</td>
+</tr>
+<tr>
+  <td><a href="https://github.com/massmontagna/MOT-Data-Analysis/blob/main/notebooks/03_lookups.ipynb">03_lookups</a></td>
+  <td>Loads the lookups and labels each defect with its system</td>
+</tr>
+<tr>
+  <td><a href="https://github.com/massmontagna/MOT-Data-Analysis/blob/main/notebooks/04_analysis.ipynb">04_analysis</a></td>
+  <td>Analysis queries, findings and charts</td>
+</tr>
+<tr>
+  <td><a href="https://github.com/massmontagna/MOT-Data-Analysis/blob/main/notebooks/05_modelling.ipynb">05_modelling</a></td>
+  <td>Predicting an initial fail</td>
+</tr>
+</tbody>
+</table></div>
+<p>The finished cleaning steps also live in <a href="https://github.com/massmontagna/MOT-Data-Analysis/tree/main/sql/"><code>sql/</code></a> as plain SQL files, run in order by <a href="https://github.com/massmontagna/MOT-Data-Analysis/blob/main/src/load_db.py"><code>src/load_db.py</code></a>. That rebuild reproduces every reconciliation number exactly.</p>
+<h2>Reproduce it</h2>
+<pre><code>python -m venv .mot
+source .mot/bin/activate
+pip install -r requirements.txt
+
+python src/download_data.py   # 2.2 GB of zips from data.gov.uk, unzipped into data/raw/
+python src/load_db.py         # builds data/mot.duckdb (about 21 GB) and prints the reconciliation counts
+</code></pre>
+<p>Then open <code>notebooks/04_analysis.ipynb</code> and <code>05_modelling.ipynb</code> and run them from inside <code>notebooks/</code>.</p>
+<p><strong>Try it without the download:</strong> <code>data/sample/</code> holds every raw row for 1 in 4,000 vehicles (10,833 tests, with their duplicates and items), plus the lookup tables. <code>python src/load_db.py --raw data/sample</code> builds a small database in seconds, and both notebooks run on it, although the numbers are noisier.</p>
+<p><strong>Note on the lookup tables:</strong> the <code>lookup.zip</code> currently on data.gov.uk is a newer release than the one this analysis used. It drops 36 retired defect codes, so 24,255 items (0.03%) get no category instead of 2,699. The headline results don't change. <code>data/sample/lookup/</code> has the exact version used here.</p>
+<p><strong>Data:</strong> DVSA, Anonymised MOT tests and results, 2024. Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/">Open Government Licence v3.0</a>.</p>
+<p><strong>Tools:</strong> Python, DuckDB, pandas, scikit-learn, matplotlib.</p>
+
+</main>
+<footer>
+  <div class="wrap">
+    <p>By <a href="https://massmontagna.com">Massimo Montagna</a>. Code and notebooks: <a href="https://github.com/massmontagna/MOT-Data-Analysis">github.com/massmontagna/MOT-Data-Analysis</a>.</p>
+  </div>
+</footer>
+</body>
+</html>
