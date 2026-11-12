@@ -11,7 +11,7 @@ This is my working reference for the MOT data I'm using in this project. I start
 | Where from | data.gov.uk, "Anonymised MOT tests and results" |
 | Licence | UK Open Government Licence v3.0 |
 | Year used | 2024 (12 monthly files per table). I may add 2023 later |
-| Date downloaded | TODO |
+| Date downloaded | 10 November 2026 (from the file timestamps in `data/raw`). `src/download_data.py` has the URLs |
 | Documentation | MOT testing data user guide v5.1 (post-May 2018) and the lookup tables |
 
 The user guide (v5.1) describes data up to the end of 2023, so some of what it says doesn't match the 2024 files. The differences are listed in section 7.1.
@@ -160,7 +160,7 @@ One row per defect, advisory or minor defect recorded against a test.
 
 The guide says this marker was only populated up to May 2018 and isn't comparable with the post-2018 Dangerous category. But 4.2% of 2024 items carry a `D`.
 
-**What it means in 2024 (settled with the lookups, `03_looksups.ipynb`):** `D` is the dangerous-defect flag. On fail (F) and PRS (P) items it matches the lookup category exactly: every F or P item whose category is Dangerous carries `D` (3,714,394 F + 146,419 P), and no Major item does. The other two groups are oddities: 10,387 advisories with a Pre-EU Directive category carry `D`, and so do 305 F items with no lookup match. For analysis I use `rfr_deficiency_category` and ignore `dangerous_mark`.
+**What it means in 2024 (settled with the lookups, `03_lookups.ipynb`):** `D` is the dangerous-defect flag. On fail (F) and PRS (P) items it matches the lookup category exactly: every F or P item whose category is Dangerous carries `D` (3,714,394 F + 146,419 P), and no Major item does. The other two groups are oddities: 10,387 advisories with a Pre-EU Directive category carry `D`, and so do 305 F items with no lookup match. For analysis I use `rfr_deficiency_category` and ignore `dangerous_mark`.
 
 Note that advisories carry the lookup category of their defect (for example 26,182,206 advisories are listed as "Dangerous"). That's the category the defect *would* have if it failed, not a severity the tester gave, so I never count advisories by category.
 
@@ -189,6 +189,8 @@ All six are comma-separated with a header row. I load them as text into `lookup_
 **Defect categories in item detail:** Pre-EU Directive 12,595, Major 5,266, Dangerous 2,370, Minor 874. "Pre-EU Directive" covers the old (pre-May 2018) defect codes.
 
 **Join path:** item → `test_result_clean` (for `test_class_id`) → item detail on `rfr_id` + `test_class_id` → item group on `test_item_set_section_id = test_item_id` + `test_class_id`. All 21,105 item details match a group this way, and the group's `item_name` is the top-level category (Brakes, Suspension, Tyres and so on).
+
+**Lookup versions:** the `lookup.zip` on data.gov.uk in November 2026 is a newer release than my copy. It is pipe-separated, its files have shorter names (`item_detail.csv` and so on), and it lacks 36 of my 21,105 item-detail rows. Every other row is identical, including the category and section. With it, 24,255 items have no description instead of 2,699. `src/download_data.py` renames the files to the names above. `data/sample/lookup/` keeps the version I used.
 
 **Coverage:** 2,699 of 91,487,420 items (15 distinct `rfr_id`s, across classes 2, 3, 4, 5 and 7) have no item detail, so they have no category. That's 0.003%, so I leave them out of category counts.
 

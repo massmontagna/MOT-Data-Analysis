@@ -1,0 +1,15 @@
+type_code,fuel_type
+ST,Steam
+CN,Compressed Natural Gas (CNG)
+OT,Other
+GA,Gas
+GD,Gas Diesel
+DI,Diesel
+EL,Electric
+FC,Fuel Cells
+GB,Gas Bi-Fuel
+HY,Hybrid Electric (Clean)
+PE,Petrol
+LP,Liquefied Petrolum Gas (LPG)
+LN,Liquefied Natural Gas (LNG)
+ED,Electric Diesel

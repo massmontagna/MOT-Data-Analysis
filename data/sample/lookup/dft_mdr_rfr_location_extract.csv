@@ -1,0 +1,130 @@
+id,lateral,longitudinal,vertical
+5,Offside,"",""
+7,"",Front,""
+11,Centre,Front,Upper
+15,Centre,"",""
+29,"","",Upper
+31,Nearside,Front,Lower
+35,Nearside Outer,"",""
+37,Nearside,Front,Inner
+45,Offside,Rear,Lower
+49,Offside,Front,Upper
+55,Offside Outer,Rear,""
+57,Offside,Front,Outer
+59,Offside Inner,Rear,""
+67,Centre,Rear,""
+69,Nearside,Front,Outer
+87,Nearside,Rear,Inner
+91,Nearside Outer,Rear,Lower
+101,Nearside Inner,Front,Lower
+107,Offside,Rear,Upper
+147,Outer,Rear,""
+149,Offside Outer,Front,Lower
+155,Centre,"",Outer
+171,Offside Outer,"",Lower
+177,Offside Outer,Rear,Lower
+179,Offside Inner,Rear,Upper
+187,Inner,Front,Upper
+195,Offside Outer,Rear,Upper
+197,Nearside Outer,Front,Upper
+227,Outer,"",Upper
+229,Central,Front,""
+235,Central,Rear,Inner
+245,Central,"",Inner
+251,Central,Rear,Lower
+1,"","",""
+9,"",Rear,""
+17,Offside,Rear,""
+33,Offside,Front,Lower
+51,Nearside,"",Lower
+53,Nearside Outer,Rear,""
+71,"",Front,Lower
+75,Nearside,"",Inner
+85,Nearside Inner,"",""
+89,Offside Inner,Front,""
+95,Offside Outer,Front,""
+103,Offside Inner,Front,Lower
+113,Centre,"",Upper
+127,Centre,Front,Lower
+137,Nearside Inner,"",Lower
+151,Centre,"",Lower
+157,"",Rear,Upper
+163,Centre,Rear,Upper
+167,Inner,Front,""
+185,Nearside Inner,Rear,Lower
+189,Nearside Outer,"",Lower
+191,Offside Inner,"",Upper
+203,Outer,Rear,Upper
+207,Offside Outer,"",Upper
+211,Inner,Front,Lower
+213,Outer,Rear,Lower
+225,Nearside Inner,"",Upper
+231,Central,Front,Lower
+233,Central,Rear,Upper
+239,Central,Rear,""
+3,Nearside,"",""
+13,Nearside,Rear,""
+27,Offside,Front,""
+39,Nearside,Front,Upper
+41,Nearside Inner,Front,Upper
+47,Centre,Front,""
+61,Inner,Rear,""
+63,"",Front,Inner
+79,Nearside Inner,Front,""
+81,"",Rear,Inner
+97,Offside Inner,"",""
+99,Nearside,Rear,Lower
+115,Offside,"",Inner
+125,"",Front,Outer
+133,Nearside,Rear,Outer
+135,Offside,"",Upper
+165,Outer,Front,""
+181,"",Rear,Outer
+199,Nearside Outer,Rear,Upper
+209,Nearside Outer,"",Upper
+217,Inner,"",Lower
+241,Central,"",Upper
+243,Central,Front,Upper
+253,Central,Rear,Outer
+19,Offside,Rear,Outer
+21,Nearside,"",Outer
+23,Offside,"",Outer
+25,Nearside,Front,""
+43,Offside Inner,Front,Upper
+65,Offside Outer,"",""
+73,Centre,Rear,Lower
+77,"",Front,Upper
+83,Offside,"",Lower
+93,Nearside Outer,Front,""
+105,Nearside,Rear,Upper
+109,Centre,Front,Outer
+111,Nearside,"",Upper
+117,Outer,"",""
+119,Nearside Inner,Rear,""
+121,Offside,Front,Inner
+123,"","",Lower
+129,Nearside Outer,Front,Lower
+131,Offside,Rear,Inner
+139,Centre,"",Inner
+141,Centre,Front,Inner
+143,"",Rear,Lower
+145,Centre,Rear,Inner
+153,Inner,"",""
+159,"","",Outer
+161,"","",Inner
+169,Offside Inner,"",Lower
+173,Nearside Inner,Rear,Upper
+175,Centre,Rear,Outer
+183,Offside Outer,Front,Upper
+193,Inner,Rear,Lower
+201,Offside Inner,Rear,Lower
+205,Outer,"",Lower
+215,Inner,"",Upper
+219,Outer,Front,Lower
+221,Inner,Rear,Upper
+223,Outer,Front,Upper
+237,Central,"",""
+247,Central,"",Lower
+249,Central,Front,Outer
+255,Central,"",Outer
+257,Central,Front,Inner

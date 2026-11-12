@@ -1,0 +1,7 @@
+type_code,test_type
+NT,Normal Test
+PV,Partial Retest Repaired at VTS
+EI,Inverted Appeal
+ES,Statutory Appeal
+PL,Partial Retest Left VTS
+RT,Re-Test

@@ -32,13 +32,33 @@ An analysis of every MOT test carried out in Great Britain in 2024 (42 million t
 
 ![Failure rate by make](reports/figures/06_fail_rate_by_make.png)
 
+## Can a model predict a fail?
+
+I trained models to predict an initial fail from the five facts the data holds about each car: age, mileage, make, fuel type and engine size. I used a 5% sample of vehicles (1.6 million tests), split by vehicle so no car appears in both the training and test sets.
+
+| Model | ROC AUC | Brier score | Better than guessing the average |
+|---|---|---|---|
+| Baseline (predict 28% for every car) | 0.500 | 0.203 | n/a |
+| Logistic regression (splines for age and mileage) | 0.687 | 0.185 | 8.6% |
+| Gradient-boosted trees | **0.692** | **0.184** | **9.0%** |
+
+**8. Basic facts about a car explain only part of an MOT result.** The best model ranks a failing car above a passing one 69% of the time. Its probabilities are very well calibrated: in every risk decile the prediction is within 0.6 points of reality, and the riskiest tenth of cars fails six times as often as the safest (51.6% against 8.7%). But it never predicts much more than a 50% chance, because most of what decides a fail (maintenance, driving conditions, the tester) isn't in the data. A simple logistic regression does almost as well as the trees, so the effects are mostly smooth and independent.
+
+![Model calibration](reports/figures/07_model_calibration.png)
+
+**9. Mileage and age carry the predictions, and fuel type adds almost nothing once those are known.** That suggests much of the diesel gap in finding 5 is a mileage effect, because diesels are typically bought for high-mileage driving.
+
+![Feature importance](reports/figures/08_feature_importance.png)
+
+The natural next step is the car's own history. Adding 2023 data would let a model use last year's result and advisories for the same `vehicle_id`.
+
 ## Caveats
 
 - **Make comparisons only control for age.** Mileage, owner type and maintenance differ between makes and aren't adjusted for.
 - **167,725 tests (0.4%) were excluded** because their records in the source files contradicted each other. A bias check on January found a fail rate of 29.4% for those tests, against 30.0% for the rest, so excluding them barely moves the overall rate.
 - **The electric fleet is young.** Only 18,422 electric cars aged 10–14 were tested, and within the 3–9 band most EVs are 3–5 years old.
 - **Some mileages and first-use years were set to missing** because they were placeholders or typing errors: 330,098 mileages, and about 30 first-use years such as 94 or 1012. The rules are in [the data dictionary](docs/data_dictionary.md), section 7.
-- **These are associations, not causes.** The explanations above (survivorship, battery weight, regenerative braking) are hypotheses the data is consistent with, not ones it proves.
+- **These are associations, not causes.** The explanations above (survivorship, battery weight, regenerative braking, diesel mileage) are hypotheses the data is consistent with, not ones it proves.
 
 ## Method
 
@@ -46,28 +66,36 @@ An analysis of every MOT test carried out in Great Britain in 2024 (42 million t
 2. **Clean.** Exact duplicate rows are removed. Tests whose rows still disagree are recorded in their own table and excluded. Types are converted deliberately, and each cleaning rule is documented with the number of rows it affects.
 3. **Label.** Each defect is joined through the DVSA lookup tables to its severity (dangerous, major or minor) and its top-level system (brakes, suspension and so on). 99.997% of items match.
 4. **Analyse.** SQL with CTEs and window functions, using DVSA's own metric definitions. Comparisons hold age fixed wherever fleet age would otherwise distort them.
-5. **Check.** Every table is reconciled against a count I already trust. The expected numbers are listed in [docs/instructions.md](docs/instructions.md), section 11.
+5. **Model.** A baseline, then logistic regression, then gradient-boosted trees, evaluated on held-out vehicles for ranking (AUC), probability quality (log loss, Brier) and calibration.
+6. **Check.** Every table is reconciled against a count I already trust. The expected numbers are listed in [docs/instructions.md](docs/instructions.md), section 11, and `src/load_db.py` prints them after every build.
 
 | Notebook | What it does |
 |---|---|
 | [01_exploration](notebooks/01_exploration.ipynb) | First look at the raw files |
-| [02_load_and_clean](notebooks/02_load_and_clean.ipynb) | Builds the clean results and item tables |
-| [03_looksups](notebooks/03_looksups.ipynb) | Loads the lookups and labels each defect with its system |
+| [02_load_and_clean](notebooks/02_load_and_clean.ipynb) | Works out and builds the clean results and item tables, step by step |
+| [03_lookups](notebooks/03_lookups.ipynb) | Loads the lookups and labels each defect with its system |
 | [04_analysis](notebooks/04_analysis.ipynb) | Analysis queries, findings and charts |
+| [05_modelling](notebooks/05_modelling.ipynb) | Predicting an initial fail |
 
-**Next:** a model that predicts initial failure from age, mileage, make and fuel type, and scripts that rebuild the whole pipeline with one command.
+The finished cleaning steps also live in [`sql/`](sql/) as plain SQL files, run in order by [`src/load_db.py`](src/load_db.py). That rebuild reproduces every reconciliation number exactly.
 
 ## Reproduce it
 
-1. Download the 2024 "Anonymised MOT tests and results" files (results, failure items and lookup tables) from [data.gov.uk](https://www.data.gov.uk/) into `data/raw/`, and unzip them.
-2. Set up the environment:
-   ```
-   python -m venv .mot
-   source .mot/bin/activate
-   pip install -r requirements.txt
-   ```
-3. Run the notebooks in order from inside `notebooks/`. They build `data/mot.duckdb` (about 21 GB).
+```
+python -m venv .mot
+source .mot/bin/activate
+pip install -r requirements.txt
+
+python src/download_data.py   # 2.2 GB of zips from data.gov.uk, unzipped into data/raw/
+python src/load_db.py         # builds data/mot.duckdb (about 21 GB) and prints the reconciliation counts
+```
+
+Then open `notebooks/04_analysis.ipynb` and `05_modelling.ipynb` and run them from inside `notebooks/`.
+
+**Try it without the download:** `data/sample/` holds every raw row for 1 in 4,000 vehicles (10,833 tests, with their duplicates and items), plus the lookup tables. `python src/load_db.py --raw data/sample` builds a small database in seconds, and both notebooks run on it, although the numbers are noisier.
+
+**Note on the lookup tables:** the `lookup.zip` currently on data.gov.uk is a newer release than the one this analysis used. It drops 36 retired defect codes, so 24,255 items (0.03%) get no category instead of 2,699. The headline results don't change. `data/sample/lookup/` has the exact version used here.
 
 **Data:** DVSA, Anonymised MOT tests and results, 2024. Contains public sector information licensed under the [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).
 
-**Tools:** Python, DuckDB, pandas, matplotlib.
+**Tools:** Python, DuckDB, pandas, scikit-learn, matplotlib.

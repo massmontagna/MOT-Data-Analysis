@@ -28,11 +28,11 @@ This is my own record of how I'm building this project: what I do, in what order
 | 2 | Get the data and write the data dictionary | Done, and kept up to date |
 | 3a | Load and clean the results files | Done |
 | 3b | Load and clean the item files | Done (`test_item_clean`) |
-| 4 | Lookup tables (turn defect codes into readable categories) | Done (`03_looksups.ipynb`, `test_item_labelled`) |
+| 4 | Lookup tables (turn defect codes into readable categories) | Done (`03_lookups.ipynb`, `test_item_labelled`) |
 | 5 | Analysis in SQL | Done (`04_analysis.ipynb`) |
 | 6 | Charts | Done (6 charts in `reports/figures/`) |
-| 7 | Modelling | Planned |
-| 8 | Scripts, README, portfolio page | Planned |
+| 7 | Modelling | Done (`05_modelling.ipynb`) |
+| 8 | Scripts, README, portfolio page | Scripts, sample data and README done. Portfolio page still to do |
 
 ## 3. Step 1: set up the project (done)
 
@@ -871,6 +871,9 @@ I'll put the finished queries in `sql/04_analysis.sql`.
 | Lookup rows: item detail / item group | 21,105 / 4,144 |
 | Tests in `analysis_scope` (Class 4, NT, P/F/PRS) | 32,968,239 |
 | Initial / final failure rate in scope | 28.3% / 22.8% |
+| Modelling sample: train / test tests | 1,318,304 / 330,022 |
+| ROC AUC: logistic regression / gradient boosting | 0.687 / 0.692 |
+| Sample build (`src/load_db.py --raw data/sample`): clean tests / items / in scope / fail rate | 10,785 / 23,289 / 8,365 / 28.2% |
 | January initial fail rate: single-row tests vs conflicting tests | 30.0% vs 29.4% |
 
 ## 12. Problems and fixes (things that went wrong, or that I need to watch for)
@@ -884,6 +887,9 @@ I'll put the finished queries in `sql/04_analysis.sql`.
 | `connection has an unfinished result` (one to watch for in newer DuckDB versions) | Using `fetchone()` can leave the result open | Use `.fetchall()[0][0]` |
 | January loaded twice (7,599,346 rows after the first file) | I ran the loop without re-running the table-creation cell | Re-run the `CREATE OR REPLACE TABLE` cell first, every time |
 | Possible text `'NULL'` versus a true missing value (not an error I hit, but one to watch for) | `cylinder_capacity` and other columns can contain the text `NULL` | `NULLIF(NULLIF(cylinder_capacity, '0'), 'NULL')` handles both |
+| Freshly downloaded lookups have different file names, use pipes, and leave more items unlabelled | data.gov.uk has published a newer `lookup.zip` (36 retired defect codes removed) | `src/download_data.py` renames the files; `read_csv` detects the delimiter. Use `data/sample/lookup/` for the exact original version |
+| Model results changed slightly between runs | DuckDB returns rows in a different order each time, so early stopping held out different rows | `ORDER BY test_id` in the modelling query |
+| Vehicle ages up to 1930 | About 30 typing errors in first-use year (94, 1012 and so on) | `age` in `analysis_scope` ignores years before 1900 |
 
 ## 13. Habits I'm keeping
 

@@ -1,0 +1,8 @@
+result_code,result
+ABR,Aborted
+ABRVE,Aborted by VE
+R,Refused
+ABA,Abandoned
+P,Passed
+F,Failed
+PRS,Pass with Rectification at Station
