@@ -1,5 +1,7 @@
 # What makes a car fail its MOT? An analysis of 33 million UK tests
 
+**Read it as a web page:** [motanalysis.massmontagna.com](https://motanalysis.massmontagna.com)
+
 An analysis of every MOT test carried out in Great Britain in 2024 (42 million tests and 92 million defect and advisory records from the DVSA), built with SQL in DuckDB and Python. I'm a mechanical engineer, so the questions are engineering ones: which systems wear out as cars age, and how failures differ between petrol, diesel, hybrid and electric cars.
 
 **Scope of the numbers below:** cars and light vans (Class 4), initial tests only, results pass, fail or PRS (fixed within an hour). That's **32,968,239 tests**.

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<meta name="description" content="{description}">
+<link rel="canonical" href="{url}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{url}">
+<meta property="og:title" content="{title}">
+<meta property="og:description" content="{description}">
+<meta property="og:image" content="{url}figures/01_fail_rate_by_age.png">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  /* Tokens from massmontagna.github.io/DESIGN.md */
+  :root {{
+    --accent: #1d4ed8; --accent-deep: #1e3a8a; --on-accent: #fff;
+    --paper: #fff; --paper-subtle: #f6f7f9; --hairline: #e3e6ea;
+    --ink: #14171c; --graphite: #555d68; --selection: #dbe4fb;
+    color-scheme: light dark;
+  }}
+  @media (prefers-color-scheme: dark) {{
+    :root {{
+      --accent: #8fb0ff; --accent-deep: #b9ceff; --on-accent: #0b1020;
+      --paper: #121418; --paper-subtle: #1a1d23; --hairline: #2b3038;
+      --ink: #e8eaee; --graphite: #a2a9b4; --selection: #24345e;
+    }}
+    /* The charts have white backgrounds, so frame them instead of inverting. */
+    main img {{ background: #fff; }}
+  }}
+  *, *::before, *::after {{ box-sizing: border-box; }}
+  ::selection {{ background: var(--selection); }}
+  body {{
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 400 1.0625rem/1.65 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }}
+  .wrap {{ max-width: 44rem; margin: 0 auto; padding: 0 16px; }}
+  a {{ color: var(--accent); text-underline-offset: 0.15em; }}
+  a:hover {{ color: var(--accent-deep); }}
+  a:focus-visible {{ outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }}
+
+  header {{ padding: 56px 0 32px; border-bottom: 1px solid var(--hairline); }}
+  .back {{ font-size: 0.9375rem; color: var(--graphite); text-decoration: none; }}
+  .back:hover {{ text-decoration: underline; }}
+  h1 {{ font-size: clamp(2rem, 5vw, 3.25rem); font-weight: 650; line-height: 1.08; letter-spacing: -0.03em; margin: 16px 0 24px; text-wrap: balance; }}
+  .button {{
+    display: inline-block; padding: 10px 18px; border-radius: 6px;
+    background: var(--accent); color: var(--on-accent); font-weight: 600; text-decoration: none;
+  }}
+  .button:hover {{ background: var(--accent-deep); color: var(--on-accent); }}
+
+  main {{ padding: 32px 0 48px; }}
+  h2 {{ font-size: 1.5rem; font-weight: 650; line-height: 1.2; letter-spacing: -0.015em; margin: 48px 0 16px; }}
+  main > p:first-child {{ font-size: clamp(1.125rem, 1.8vw, 1.3rem); font-weight: 500; }}
+  img {{ display: block; width: 100%; height: auto; margin: 24px 0; border: 1px solid var(--hairline); border-radius: 6px; }}
+  code {{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.875em; background: var(--paper-subtle); padding: 0.1em 0.3em; border-radius: 4px; }}
+  pre {{ background: var(--paper-subtle); border: 1px solid var(--hairline); border-radius: 6px; padding: 16px; overflow-x: auto; line-height: 1.7; }}
+  pre code {{ background: none; padding: 0; }}
+  .table {{ overflow-x: auto; margin: 24px 0; }}
+  table {{ border-collapse: collapse; width: 100%; font-size: 0.9375rem; }}
+  th, td {{ text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--hairline); vertical-align: top; }}
+  th {{ font-weight: 650; }}
+  td:not(:first-child), th:not(:first-child) {{ font-variant-numeric: tabular-nums; }}
+  li {{ margin: 6px 0; }}
+
+  footer {{ border-top: 1px solid var(--hairline); padding: 24px 0 48px; color: var(--graphite); font-size: 0.9375rem; }}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="back" href="https://massmontagna.com">← massmontagna.com</a>
+    <h1>{title}</h1>
+    <a class="button" href="{repo}">View the code on GitHub</a>
+  </div>
+</header>
+<main class="wrap">
+{content}
+</main>
+<footer>
+  <div class="wrap">
+    <p>By <a href="https://massmontagna.com">Massimo Montagna</a>. Code and notebooks: <a href="{repo}">github.com/massmontagna/MOT-Data-Analysis</a>.</p>
+  </div>
+</footer>
+</body>
+</html>

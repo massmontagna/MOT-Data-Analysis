@@ -16,6 +16,7 @@ Two docs are the source of truth. Read them before changing anything:
 - There is no lint or test suite. The checks are the reconciliation counts.
 - `python src/download_data.py` fetches and unzips the raw data into `data/raw/`.
 - `python src/load_db.py` rebuilds `data/mot.duckdb` by running `sql/01…08_*.sql` in order, then prints the reconciliation counts. They must match `docs/instructions.md` section 11. `--raw data/sample --db <file>` builds from the small committed sample in seconds, which is the quick way to test a pipeline change.
+- `python site/build.py` rebuilds the website (motanalysis.massmontagna.com) into `site/dist/` from `README.md` and `reports/figures/`. Re-run it and commit `site/dist/` after changing either; Cloudflare Pages serves `site/dist/` as committed.
 - Notebooks run top to bottom with the working directory set to `notebooks/`. Paths are relative to it (`../data/mot.duckdb`). Run one headless with `../.mot/bin/jupyter nbconvert --to notebook --execute --inplace 04_analysis.ipynb`. Notebooks 02 and 03 are the step-by-step working; the `sql/` files are the finished pipeline, so a cleaning change goes in both places.
 
 ## Data and database
